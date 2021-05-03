@@ -1,0 +1,68 @@
+"Thread-1@578" prio=5 tid=0x11 nid=NA runnable
+  java.lang.Thread.State: RUNNABLE
+	 blocks Thread-0@556
+	  at java.util.regex.Pattern.newCharProperty(Pattern.java:2950)
+	  at java.util.regex.Pattern.atom(Pattern.java:2336)
+	  at java.util.regex.Pattern.sequence(Pattern.java:2210)
+	  at java.util.regex.Pattern.expr(Pattern.java:2069)
+	  at java.util.regex.Pattern.compile(Pattern.java:1783)
+	  at java.util.regex.Pattern.<init>(Pattern.java:1430)
+	  at java.util.regex.Pattern.compile(Pattern.java:1069)
+	  at java.util.Formatter.<clinit>(Formatter.java:2693)
+	  at java.io.PrintStream.format(PrintStream.java:1208)
+	  - locked <0x2d9> (a java.io.PrintStream)
+	  at java.io.PrintStream.printf(PrintStream.java:1105)
+	  at Server.Server.runServer(Server.java:53)
+	  at Server.Server.lambda$start$0(Server.java:33)
+	  at Server.Server$$Lambda$1.0x0000000800bb1238.run(Unknown Source:-1)
+	  at java.lang.Thread.run(Thread.java:832)
+
+"Thread-0@556" prio=5 tid=0x10 nid=NA waiting for monitor entry
+  java.lang.Thread.State: BLOCKED
+	 waiting for Thread-1@578 to release lock on <0x2d9> (a java.io.PrintStream)
+	  at java.io.PrintStream.format(PrintStream.java:1204)
+	  at java.io.PrintStream.printf(PrintStream.java:1105)
+	  at Server.Server.runServer(Server.java:53)
+	  at Server.Server.lambda$start$0(Server.java:33)
+	  at Server.Server$$Lambda$1.0x0000000800bb1238.run(Unknown Source:-1)
+	  at java.lang.Thread.run(Thread.java:832)
+
+"Common-Cleaner@449" daemon prio=8 tid=0xf nid=NA waiting
+  java.lang.Thread.State: WAITING
+	  at java.lang.Object.wait(Object.java:-1)
+	  at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:155)
+	  at jdk.internal.ref.CleanerImpl.run(CleanerImpl.java:148)
+	  at java.lang.Thread.run(Thread.java:832)
+	  at jdk.internal.misc.InnocuousThread.run(InnocuousThread.java:134)
+
+"main@1" prio=5 tid=0x1 nid=NA runnable
+  java.lang.Thread.State: RUNNABLE
+	  at Client.Client.communicateWithServer(Client.java:25)
+	  at test.RunCommunicateWithServers.CommunicateWithServer_MazeGenerating(RunCommunicateWithServers.java:72)
+	  at test.RunCommunicateWithServers.main(RunCommunicateWithServers.java:33)
+
+"Reference Handler@723" daemon prio=10 tid=0x2 nid=NA runnable
+  java.lang.Thread.State: RUNNABLE
+	  at java.lang.ref.Reference.waitForReferencePendingList(Reference.java:-1)
+	  at java.lang.ref.Reference.processPendingReferences(Reference.java:241)
+	  at java.lang.ref.Reference$ReferenceHandler.run(Reference.java:213)
+
+"Finalizer@724" daemon prio=8 tid=0x3 nid=NA waiting
+  java.lang.Thread.State: WAITING
+	  at java.lang.Object.wait(Object.java:-1)
+	  at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:155)
+	  at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:176)
+	  at java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:170)
+
+"Signal Dispatcher@725" daemon prio=9 tid=0x4 nid=NA runnable
+  java.lang.Thread.State: RUNNABLE
+
+"Attach Listener@726" daemon prio=5 tid=0x5 nid=NA runnable
+  java.lang.Thread.State: RUNNABLE
+
+"Notification Thread@448" daemon prio=9 tid=0xe nid=NA runnable
+  java.lang.Thread.State: RUNNABLE
+
+"Thread-2@721" prio=5 tid=0x12 nid=NA runnable
+  java.lang.Thread.State: RUNNABLE
+
