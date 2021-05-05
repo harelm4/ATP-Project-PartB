@@ -11,7 +11,7 @@ public  class Configurations {
     private Properties prop;
     private Configurations(){
           prop = new Properties();
-      // prop.setProperty("threadPoolSize",)
+
     }
     public static synchronized Configurations getInstance(){
         if(obj==null){
@@ -19,7 +19,7 @@ public  class Configurations {
         }
         return obj;
     }
-    public void setThreadPoolSize(String size){
+    public synchronized void setThreadPoolSize(String size){
         try{
             prop.setProperty("threadPoolSize",size);
             prop.store(new FileOutputStream("config.properties"),null);
@@ -28,7 +28,7 @@ public  class Configurations {
         }
 
     }
-    public void setMazeGeneratingAlgorithm(String mazeGeneratingAlgorithm){
+    public synchronized void setMazeGeneratingAlgorithm(String mazeGeneratingAlgorithm){
         try{
             prop.setProperty("mazeGeneratingAlgorithm",mazeGeneratingAlgorithm);
             prop.store(new FileOutputStream("config.properties"),null);
@@ -37,7 +37,7 @@ public  class Configurations {
         }
 
     }
-    public void setMazeSearchingAlgorithm(String searchingAlgorithm) {
+    public synchronized void setMazeSearchingAlgorithm(String searchingAlgorithm) {
         try {
             prop.setProperty("mazeSearchingAlgorithm", searchingAlgorithm);
             prop.store(new FileOutputStream("config.properties"), null);
@@ -45,7 +45,7 @@ public  class Configurations {
             e.printStackTrace();
         }
     }
-    public String getThreadPoolSize(){
+    public synchronized String getThreadPoolSize(){
         String value="";
         try {
             prop.load(new FileInputStream("config.properties"));
@@ -56,7 +56,7 @@ public  class Configurations {
         }
         return value;
     }
-    public String getMazeGeneratingAlgorithm(){
+    public synchronized String getMazeGeneratingAlgorithm(){
         String value="";
         try {
             prop.load(new FileInputStream("config.properties"));
@@ -67,7 +67,7 @@ public  class Configurations {
         }
         return value;
     }
-    public String getMazeSearchingAlgorithm(){
+    public synchronized String getMazeSearchingAlgorithm(){
         String value="";
         try {
             prop.load(new FileInputStream("config.properties"));

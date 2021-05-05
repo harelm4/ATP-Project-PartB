@@ -23,10 +23,11 @@ public class SimpleDecompressorInputStream extends InputStream {
     public int read(byte[] returnArray) throws IOException {
         byte[] inputByteArray= new byte[in.available()];
         in.read(inputByteArray);
-        for (byte b:
-             inputByteArray) {
-            System.out.printf(String.valueOf(b)+ "\n");
-        }
+        System.out.printf("compressed size:"+String.valueOf(inputByteArray.length)+"\n");
+//        for (byte b:
+//             inputByteArray) {
+//            System.out.printf(String.valueOf(b)+ "\n");
+//        }
         int index;
         //getting :maze row size,maze column size,start row index,start column index,goal row index,goal column index
         byte[] rowSizeB=new byte[4];
