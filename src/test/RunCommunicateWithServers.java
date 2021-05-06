@@ -1,149 +1,248 @@
-package test;
-
-import Client.Client;
-import Client.IClientStrategy;
+import Client.*;
+import IO.MyCompressorOutputStream;
 import IO.MyDecompressorInputStream;
-import Server.Server;
-import Server.ServerStrategyGenerateMaze;
-import Server.ServerStrategySolveSearchProblem;
+import Server.*;
+import algorithms.mazeGenerators.AMazeGenerator;
 import algorithms.mazeGenerators.Maze;
 import algorithms.mazeGenerators.MyMazeGenerator;
 import algorithms.search.AState;
 import algorithms.search.Solution;
-import Server.Configurations;
 
 import java.io.*;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RunCommunicateWithServers {
-    public static void main(String[] args) {
-//Initializing servers
 
-        //todo:configuration file , saving solutions on Server
-        Configurations.getInstance().setThreadPoolSize("3");
-        Configurations.getInstance().setMazeGeneratingAlgorithm("EmptyMazeGenerator");
-        Configurations.getInstance().setMazeSearchingAlgorithm("BFS");
-        Server mazeGeneratingServer = new Server(5400, 10000, new
-                ServerStrategyGenerateMaze());
-        Server solveSearchProblemServer = new Server(5401, 10000, new
-                ServerStrategySolveSearchProblem());
-//Server stringReverserServer = new Server(5402, 1000, new
-//        ServerStrategyStringReverser());
-//Starting servers
+    private static final String resultsFilePath = "results.txt";
+    private static final String logFilePath = "results.log";
+    private static int Port_ServerMazeGenerating = getRandomNumber(5000, 6000);
+    private static int Port_ServerSearchProblemSolver = getRandomNumber(6001, 7000);
+    private static int total_test = 0;
+    private static int total_pass = 0;
+    private static double avg_comp;
+    private static final int ServerListeningIntervalMS = 1000;
+    //<editor-fold desc="General">
+    public static enum TestStatus {
+        Passed, Failed;
+    }
+
+    private static String getTestStatusString(boolean testPassed) {
+        return testPassed ? TestStatus.Passed.toString() : TestStatus.Failed.toString();
+    }
+
+    private static void appendToFile(String text, String filePath){
+        try (java.io.FileWriter fw = new java.io.FileWriter(filePath, true)) {
+            fw.write(text + "\r\n");
+        } catch (IOException ex) {
+            System.out.println(String.format("Error appending text to file: %s", filePath));
+        }
+    }
+
+    private static void appendToResultsFile(String text){
+        appendToFile(text, resultsFilePath);
+    }
+
+    private static void appendToLogFile(String text){
+        appendToFile(text, logFilePath);
+    }
+
+    private static void appendToResultsAndLogFiles(String text) {
+        appendToResultsFile(text);
+        appendToLogFile(text);
+    }
+
+    private static void appendExceptionToFile(Exception e, String filePath) {
+        String message = e.getMessage();
+        if (message == null)
+        {
+            message =  String.valueOf(e);
+        }
+        appendToFile(String.format("Exception: %s", message),filePath);
+        if (e.getStackTrace().length > 1)
+        {
+            String msg = String.valueOf(e.getStackTrace()[0]);
+            appendToFile(String.format("Exception Stack Trace: %s", msg), filePath);
+        }
+        else
+        {
+            int x = 1;
+        }
+    }
+    //</editor-fold>
+    private static int getRandomNumber(int from, int to) {
+        if (from < to)
+            return from + new Random().nextInt(Math.abs(to - from));
+        return from - new Random().nextInt(Math.abs(to - from));
+    }
+
+    private static Integer getFreePort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
+    }
+    public static void main(String[] args) {
+        try {
+
+            Test_CompressDecompressMaze();
+
+            Test_CommunicateWithServers();
+        }
+        catch (Exception e)
+        {
+            System.out.println("Thats a problema");
+        }
+    }
+
+    //<editor-fold desc="Test_CompressDecompressMaze">
+    private static void Test_CompressDecompressMaze() {
+        double averageCompressionRate=0;
+        int size = 5;
+        String mazeFileName = "savedMaze.maze";
+        AMazeGenerator mazeGenerator = new MyMazeGenerator();
+        Maze maze = mazeGenerator.generate(size, size); //Generate new maze
+        double mazeOriginalSize = maze.toByteArray().length;
+        try {
+            OutputStream out = new MyCompressorOutputStream(new FileOutputStream(mazeFileName));
+            out.write(maze.toByteArray());
+            out.flush();
+            out.close();
+        } catch (IOException e) {
+//
+            appendToResultsFile(String.valueOf(total_test));
+        }
+
+        byte savedMazeBytes[] = new byte[0];
+        try {
+            InputStream in = new MyDecompressorInputStream(new FileInputStream(mazeFileName));
+            savedMazeBytes = new byte[maze.toByteArray().length];
+            in.read(savedMazeBytes);
+            in.close();
+        } catch (IOException e) {
+
+        }
+        File compressed = new File("savedMaze.maze");
+        //appendToResultsFile("compressed size - " + (double) compressed.length() / 1024);
+        double current_comp = compressed.length();
+        //appendToResultsFile("compression rate - " + (((double)compressed.length() / 1024) / mazeOriginalSize) * 100);
+        Maze loadedMaze = new Maze(savedMazeBytes);
+        boolean areMazesEquals = Arrays.equals(loadedMaze.toByteArray(), maze.toByteArray());
+        if (areMazesEquals == true)
+        {
+            total_pass++;
+        }
+        else {
+            appendToResultsFile(String.valueOf(total_test));
+        }
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="Test_CommunicateWithServers">
+    private static void Test_CommunicateWithServers() {
+        //Initializing servers
+        int counter = 0;
+        Port_ServerMazeGenerating = getRandomNumber(5000, 6000);
+        Port_ServerSearchProblemSolver = getRandomNumber(6001, 7000);
+        Server mazeGeneratingServer = new Server(Port_ServerMazeGenerating, 1000, new ServerStrategyGenerateMaze());
+        Server solveSearchProblemServer = new Server(Port_ServerSearchProblemSolver, 1000, new ServerStrategySolveSearchProblem());
+
+        //Starting  servers
         solveSearchProblemServer.start();
         mazeGeneratingServer.start();
-//stringReverserServer.start();
-//Communicating with servers
-//        CommunicateWithServer_MazeGenerating();
 
-        CommunicateWithServer_SolveSearchProblem();
-//CommunicateWithServer_StringReverser();
-//Stopping all servers
+        CommunicateWithServer_MazeGenerating(counter);
+        CommunicateWithServer_SolveSearchProblem(counter);
+
+        //Stopping all servers
         mazeGeneratingServer.stop();
         solveSearchProblemServer.stop();
-//stringReverserServer.stop();
     }
-    private static void CommunicateWithServer_MazeGenerating() {
+
+    private static void CommunicateWithServer_MazeGenerating(int i) {
+        AtomicInteger testsPassed = new AtomicInteger(0);
         try {
-            Client client = new Client(InetAddress.getByName("127.0.0.1"), 5400, new
-                    IClientStrategy() {
-                        @Override
-                        public void clientStrategy(InputStream inFromServer,
-                                                   OutputStream outToServer) {
-                            try {
-                                ObjectOutputStream toServer = new ObjectOutputStream(outToServer);
-                                ObjectInputStream fromServer = new ObjectInputStream(inFromServer);
-                                toServer.flush();
-                                int[] mazeDimensions = new int[]{3, 3};
-                                toServer.writeObject(mazeDimensions); //send maze dimensions to server
-                                toServer.flush();
-
-                                byte[] compressedMaze = (byte[]) fromServer.readObject(); //read generated maze (compressed with MyCompressor) from server
-                                InputStream is = new MyDecompressorInputStream(new ByteArrayInputStream(compressedMaze));
-                                byte[] decompressedMaze = new byte[1000 /*CHANGE SIZE ACCORDING TO YOU MAZE SIZE*/]; //allocating byte[] for the decompressed maze -
-                                is.read(decompressedMaze); //Fill decompressedMaze with bytes
-                                Maze maze = new Maze(decompressedMaze);
-                                maze.print();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+            new Client(InetAddress.getLocalHost(), Port_ServerMazeGenerating, new IClientStrategy() {
+                @Override
+                public void clientStrategy(InputStream inFromServer, OutputStream outToServer) {
+                    try {
+                        total_test++;
+                        int size = (int) (50 * (i+1));
+                        ObjectOutputStream toServer = new ObjectOutputStream(outToServer);
+                        toServer.flush();
+                        int[] mazeDimensions = new int[]{size, size};
+                        toServer.writeObject(mazeDimensions); //send maze dimensions to server
+                        toServer.flush();
+                        ObjectInputStream fromServer = new ObjectInputStream(inFromServer);
+                        byte[] compressedMaze = (byte[]) fromServer.readObject(); //read generated maze (compressed with MyCompressor) from server
+                        InputStream is = new MyDecompressorInputStream(new ByteArrayInputStream(compressedMaze));
+                        byte[] decompressedMaze = new byte[1000000 /*CHANGE SIZE ACCORDING TO YOU MAZE SIZE*/]; //allocating byte[] for the decompressed maze -
+                        is.read(decompressedMaze); //Fill decompressedMaze with bytes
+                        Maze maze = new Maze(decompressedMaze);
+                        if (maze.toByteArray().length > 1000) {
+                            testsPassed.incrementAndGet();
                         }
-                    });
-            client.communicateWithServer();
-        } catch (UnknownHostException e) {
-            System.out.printf("Thread num:"+Thread.currentThread().getName()+"\n");
-            e.printStackTrace();
+                        else
+                        {
+                            appendToResultsFile(String.valueOf(total_test));
+                        }
+                    } catch (Exception e) {
+                        appendToResultsFile(String.valueOf(total_test));
+                    }
+                }
+            }).communicateWithServer();
+        } catch (Exception e) {
+
+        } finally {
         }
+        total_pass +=  testsPassed.get();
     }
-    private static void CommunicateWithServer_SolveSearchProblem() {
+    private static void CommunicateWithServer_SolveSearchProblem(int i) {
+        AtomicInteger testsPassed = new AtomicInteger(0);
+        double parallelTests = 5;
         try {
-            Client client = new Client(InetAddress.getLocalHost(), 5401, new
-                    IClientStrategy() {
-                        @Override
-                        public void clientStrategy(InputStream inFromServer,
-                                                   OutputStream outToServer) {
-                            try {
-                                ObjectOutputStream toServer = new
-                                        ObjectOutputStream(outToServer);
+            new Client(InetAddress.getLocalHost(), Port_ServerSearchProblemSolver, new IClientStrategy() {
+                @Override
+                public void clientStrategy(InputStream inFromServer, OutputStream outToServer) {
+                    try {
+                        total_test++;
+                        int size = (int) (50 * (i+1));
+                        ObjectOutputStream toServer = new ObjectOutputStream(outToServer);
+                        ObjectInputStream fromServer = new ObjectInputStream(inFromServer);
+                        toServer.flush();
+                        MyMazeGenerator mg = new MyMazeGenerator();
 
-                                toServer.flush();
-                                MyMazeGenerator mg = new MyMazeGenerator();
-                                Maze maze = mg.generate(3, 3);
-                                maze.print();
-                                toServer.writeObject(maze); //send maze to server
-                                toServer.flush();
-                                ObjectInputStream fromServer = new ObjectInputStream(inFromServer);
-                                Solution mazeSolution = (Solution) fromServer.readObject(); //read generated maze (compressed with MyCompressor) from server
-                                    //Print Maze Solution retrieved from the server
-                                System.out.println(String.format("Solution steps:%s", mazeSolution));//todo see if rotem answerd : https://moodle2.bgu.ac.il/moodle/mod/forum/discuss.php?d=497124
-                                        ArrayList<AState> mazeSolutionSteps =
-                                                mazeSolution.getSolutionPath();
-                                for (int i = 0; i < mazeSolutionSteps.size(); i++) {
-                                    System.out.println(String.format("%s. %s", i,
-                                            mazeSolutionSteps.get(i).toString()));
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                        Maze maze = mg.generate(size, size);
+                        toServer.writeObject(maze); //send maze to server
+                        toServer.flush();
+                        Solution mazeSolution = (Solution) fromServer.readObject(); //read generated maze (compressed with MyCompressor) from server
+
+                        //Print Maze Solution retrieved from the server
+                        ArrayList<AState> mazeSolutionSteps = mazeSolution.getSolutionPath();
+                        if(!mazeSolutionSteps.isEmpty()){
+                            testsPassed.incrementAndGet();
                         }
-                    });
-            client.communicateWithServer();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-    }
-    private static void CommunicateWithServer_StringReverser() {
-        try {
-            Client client = new Client(InetAddress.getLocalHost(), 5402, new
-                    IClientStrategy() {
-                        @Override
-                        public void clientStrategy(InputStream inFromServer,
-                                                   OutputStream outToServer) {
-                            try {
-                                BufferedReader fromServer = new BufferedReader(new
-                                        InputStreamReader(inFromServer));
-                                PrintWriter toServer = new PrintWriter(outToServer);
-
-
-                                String message = "Client Message";
-                                String serverResponse;
-                                toServer.write(message + "\n");
-                                toServer.flush();
-                                serverResponse = fromServer.readLine();
-                                System.out.println(String.format("Server response: %s", serverResponse));
-                                        toServer.flush();
-                                fromServer.close();
-                                toServer.close();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                        else
+                        {
+                            appendToResultsFile(String.valueOf(total_test));
                         }
-                    });
-            client.communicateWithServer();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
+                    } catch (Exception e) {
+//
+                    }
+                }
+            }).communicateWithServer();
+        } catch (Exception e) {
+
+
+        } finally {
         }
+        total_pass +=  testsPassed.get();
     }
+    //</editor-fold>
 }

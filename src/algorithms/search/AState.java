@@ -19,7 +19,7 @@ public abstract class AState implements Serializable
         this.cost = cost;
         this.cameFrom = cameFrom;
     }
-
+    public abstract String  toString();
     public int getCost()
     {
         return cost;

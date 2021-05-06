@@ -1,0 +1,4 @@
+#Thu May 06 19:34:48 IDT 2021
+threadPoolSize=3
+mazeSearchingAlgorithm=DFS
+mazeGeneratingAlgorithm=MyMazeGenerator

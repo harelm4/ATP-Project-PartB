@@ -22,7 +22,7 @@ public class Client {
             Socket serverSocket = new Socket(serverIP, serverPort);
 
             strategy.clientStrategy(serverSocket.getInputStream(), serverSocket.getOutputStream());
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }

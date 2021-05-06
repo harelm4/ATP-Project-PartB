@@ -4,33 +4,69 @@ import IO.MyDecompressorInputStream;
 import algorithms.mazeGenerators.Maze;
 import algorithms.search.*;
 
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.util.Scanner;
 
 public class ServerStrategySolveSearchProblem implements ServerStrategy {
-
+    String tempDirectoryPath = System.getProperty("java.io.tmpdir");
     @Override
     public void applyStrategy(InputStream inFromClient, OutputStream outToClient) {
+        Solution curSol;
         try {
 
             ObjectInputStream fromClient = new ObjectInputStream(inFromClient);
             ObjectOutputStream toClient = new ObjectOutputStream(outToClient);
 //            MyDecompressorInputStream mdc = new MyDecompressorInputStream(inFromClient);
+
             Maze maze = (Maze) fromClient.readObject();
+
             SearchableMaze sm = new SearchableMaze(maze);
-            ISearchingAlgorithm alg;
-            if (Configurations.getInstance().getMazeSearchingAlgorithm().equals("BFS")){
-                alg=new BestFirstSearch();
+            String name = "maze@"+maze.hashCode()+maze.toString();
+
+            boolean found = false;
+            File file = new File(tempDirectoryPath);
+            File[] files = file.listFiles();
+            for (File f:
+                    files) {
+                if (name.equals(f.getName())){
+                    found=true;
+                    break;
+                }
             }
-            else if (Configurations.getInstance().getMazeSearchingAlgorithm().equals("DFS")){
-                alg=new DepthFirstSearch();
+
+            if(found){//if maze has been solved before:
+
+                FileInputStream fi = new FileInputStream(new File(tempDirectoryPath+"\\"+name));
+                ObjectInputStream oi = new ObjectInputStream(fi);
+                curSol = (Solution) oi.readObject();
+
+
+
             }
             else{
-                alg=new BestFirstSearch();
+
+                ISearchingAlgorithm alg;
+                if (Configurations.getInstance().getMazeSearchingAlgorithm().equals("BFS")){
+                    alg=new BestFirstSearch();
+                }
+                else if (Configurations.getInstance().getMazeSearchingAlgorithm().equals("DFS")){
+                    alg=new DepthFirstSearch();
+                }
+                else{
+                    alg=new BestFirstSearch();
+                }
+                curSol =alg.solve(sm);
+
+                //write:
+                FileOutputStream f = new FileOutputStream(new File(tempDirectoryPath+"\\"+name));
+                ObjectOutputStream o = new ObjectOutputStream(f);
+                o.writeObject(curSol);
+
             }
-            Solution curSol =alg.solve(sm);
+
+
+
+
             toClient.writeObject(curSol);
 
         }
@@ -38,4 +74,19 @@ public class ServerStrategySolveSearchProblem implements ServerStrategy {
             e.printStackTrace();
         }
     }
+    private String getMazeSolutionFileNameFromDirectory(Maze maze){
+
+        String name = "maze@"+maze.hashCode()+maze.toString();
+        File file = new File(tempDirectoryPath);
+        File[] files = file.listFiles();
+        for (File f:
+                files) {
+            if (name.equals(f.getName())){
+                return f.getName();
+            }
+        }
+        return "not solved before";
+    }
+
+
 }

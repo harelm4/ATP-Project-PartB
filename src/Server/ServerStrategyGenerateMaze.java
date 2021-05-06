@@ -4,8 +4,10 @@ import IO.MyCompressorOutputStream;
 import algorithms.mazeGenerators.*;
 
 import java.io.*;
+import java.util.Scanner;
 
 public class ServerStrategyGenerateMaze implements ServerStrategy {
+
     @Override
     public void applyStrategy(InputStream inFromClient, OutputStream outToClient) {
         try {
@@ -31,12 +33,7 @@ public class ServerStrategyGenerateMaze implements ServerStrategy {
             mc.write(maze.toByteArray());
             toClient.writeObject(ba.toByteArray());
             toClient.flush();
-//            toClient.flush();
-//            mc.write(maze.toByteArray());
 
-//            mc.flush();
-//            fromClient.close();
-//            toClient.close();
         }
         catch (Exception e){
             System.out.printf("exception from ServerStrategyGenerateMaze:\n ");
@@ -44,4 +41,5 @@ public class ServerStrategyGenerateMaze implements ServerStrategy {
         }
 
     }
+
 }

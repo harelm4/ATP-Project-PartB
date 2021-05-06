@@ -21,5 +21,13 @@ public class Solution implements Serializable
         this.solutionPath = solutionPath;
     }
 
+    public String toString(){
+        String result = "|";
+        for (AState st:
+             solutionPath) {
+                result += st.toString()+"|";
+        }
+        return result;
+    }
     public ArrayList<AState> getSolutionPath() {return this.solutionPath == null ? new ArrayList<>() : this.solutionPath;}
 }

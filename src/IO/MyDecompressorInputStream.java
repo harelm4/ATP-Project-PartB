@@ -26,7 +26,7 @@ public class MyDecompressorInputStream extends InputStream {
     public int read(byte[] returnArray) throws IOException {
         byte[] inputArray = new byte[in.available()];
         in.read(inputArray);
-        System.out.printf("\nc:"+inputArray.length+"\n");
+
         //rowSize,colSize,startRow,startCol,goalrow,goalCol
         //indexes and sizes
         byte[] rowSizeB=new byte[4];
